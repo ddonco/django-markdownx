@@ -13,6 +13,7 @@ NINETY_DPI = 90
 IM_WIDTH = 500
 IM_HEIGHT = 500
 LATENCY = 500
+IMAGE_DESTINATION = 'local'
 
 # ------------------------------------------------------------------
 
@@ -74,6 +75,15 @@ MARKDOWNX_SVG_JAVASCRIPT_PROTECTION = True
 # Editor
 # --------------------
 MARKDOWNX_EDITOR_RESIZABLE = _mdx('EDITOR_RESIZABLE', True)
+
+
+# Cloud image uploading
+# --------------------
+MARKDOWNX_CLOUD_UPLOAD = _mdx('CLOUD_UPLOAD', IMAGE_DESTINATION)
+
+MARKDOWNX_CLOUD_FOLDER = _mdx('CLOUD_FOLDER', None)
+
+MARKDOWNX_CLOUD_TAGS = _mdx('CLOUD_TAGS', None)
 
 
 # ------------------------------------------------

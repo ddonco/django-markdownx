@@ -25,6 +25,7 @@ Key features
 * Easy template customization, layout modification, and personalization.
 * Multiple editors per page.
 * Django Admin support.
+* Cloudinary image uploading
 
 Preview
 =======

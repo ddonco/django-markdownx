@@ -18,8 +18,13 @@ from .settings import (
     MARKDOWNX_MEDIA_PATH,
     MARKDOWNX_UPLOAD_CONTENT_TYPES,
     MARKDOWNX_UPLOAD_MAX_SIZE,
-    MARKDOWNX_SVG_JAVASCRIPT_PROTECTION
+    MARKDOWNX_SVG_JAVASCRIPT_PROTECTION,
+    MARKDOWNX_CLOUD_UPLOAD,
+    MARKDOWNX_CLOUD_FOLDER,
+    MARKDOWNX_CLOUD_TAGS
 )
+
+from cloudinary.uploader import upload
 
 
 class ImageForm(forms.Form):
@@ -96,19 +101,33 @@ class ImageForm(forms.Form):
         :type file_name: str
         :param commit: If ``True``, the image is saved onto the disk.
         :type commit: bool
-        :return: URL of the uploaded image ``commit=True``, otherwise a namedtuple 
-                 of ``(path, image)`` where ``path`` is the absolute path generated 
+        :return: URL of the uploaded image ``commit=True``, otherwise a namedtuple
+                 of ``(path, image)`` where ``path`` is the absolute path generated
                  for saving the file, and ``image`` is the prepared image.
         :rtype: str, namedtuple
         """
         # Defining a universally unique name for the file
         # to be saved on the disk.
-        unique_file_name = self.get_unique_file_name(file_name)
+        unique_file_name = self.get_unique_file_name(file_name,
+                                                     MARKDOWNX_CLOUD_UPLOAD)
         full_path = path.join(MARKDOWNX_MEDIA_PATH, unique_file_name)
 
         if commit:
-            default_storage.save(full_path, image)
-            return default_storage.url(full_path)
+            if MARKDOWNX_CLOUD_UPLOAD == 'cloudinary':
+
+                try:
+                    response = upload(image,
+                                      public_id=unique_file_name,
+                                      folder=MARKDOWNX_CLOUD_FOLDER,
+                                      tags=MARKDOWNX_CLOUD_TAGS)
+                except Exception as exception:
+                    return "Cloudinary upload error: {}".format(exception)
+
+                return response['secure_url']
+
+            else:
+                default_storage.save(full_path, image)
+                return default_storage.url(full_path)
 
         # If `commit is False`, return the path and in-memory image.
         image_data = namedtuple('image_data', ['path', 'image'])
@@ -140,24 +159,29 @@ class ImageForm(forms.Form):
         return thumb_io
 
     @staticmethod
-    def get_unique_file_name(file_name):
+    def get_unique_file_name(file_name, file_destination):
         """
-        Generates a universally unique ID using Python ``UUID`` and attaches the 
+        Generates a universally unique ID using Python ``UUID`` and attaches the
         extension of file name to it.
 
         :param file_name: Name of the uploaded file, including the extension.
         :type file_name: str
-        :return: Universally unique ID, ending with the extension extracted 
+        :return: Universally unique ID, ending with the extension extracted
                  from ``file_name``.
         :rtype: str
         """
         extension = 1
         extension_dot_index = 1
 
-        file_name = "{unique_name}.{extension}".format(
-            unique_name=uuid4(),
-            extension=path.splitext(file_name)[extension][extension_dot_index:]
-        )
+        if file_destination == 'cloudinary':
+            file_name = "{unique_name}".format(
+                unique_name=uuid4(),
+            )
+        else:
+            file_name = "{unique_name}.{extension}".format(
+                unique_name=uuid4(),
+                extension=path.splitext(file_name)[extension][extension_dot_index:]
+            )
         return file_name
 
     def clean(self):
